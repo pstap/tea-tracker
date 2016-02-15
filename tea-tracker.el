@@ -10,6 +10,9 @@
 
 ;;; Code:
 
+(require 'button)
+(eval-when-compile (require 'cl))
+
 (defun tea-tracker ()
   "Start tea-tracker."
   (interactive)
@@ -35,7 +38,8 @@
 (defun tea-tracker-init ()
   "Called when tea-tracker start."
   (setf *steep-count* 0)
-  (setf *steeps* nil))
+  (setf *steeps* nil)
+  (setq lexical-binding t))
 
 (defun tea-tracker-start-steeping ()
   "Start the timer if one is not currently running."
@@ -69,16 +73,16 @@
 (defun tea-tracker-print-steeps ()
   "Print the steeps list to the buffer."
   (dolist (steep *steeps*)
-	(let ((steep-num (car steep))
-		  (steep-time (car (cdr steep)))
-		  (descr (cdr (cdr steep))))
-	  (insert (format "Steep %d (%ds)\n"
-					  steep-num
-					  steep-time)))))
+	(lexical-let
+		((steep-num (nth 0 steep))
+		 (steep-time (nth 1 steep))
+		 (descr (nth 2 steep)))
+	  (insert-button (format "Steep %d (%ds)\n" steep-num steep-time)
+					 'action (lambda (x) (message "%d" steep-num))))))
 
 (defun tea-tracker-steep-finished ()
   "Run when timer is finished."
-  (message (format "Steep %d finished!" *steep-count*))
+  (message (format "Steep %s finished!" *steep-count*))
   (start-process-shell-command "tea-tracker-timer" nil
 							   (format *tea-tracker-sound-command* *tea-tracker-sound*))
   (setf *steeping?* nil)
